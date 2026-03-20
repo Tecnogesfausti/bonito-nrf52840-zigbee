@@ -1,141 +1,176 @@
-# Zigbee `light_bulb` para Bonito Nano V2.0 / nRF52840
+# Bonito nRF52840 Zigbee
 
-Este repo prepara un build local simplificado del sample Zigbee `light_bulb` para una placa estilo `nice!nano` / `Pro Micro nRF52840`, con salida `UF2` para flasheo por USB.
+Firmware Zigbee para una placa `Bonito` / `nice!nano`-compatible basada en `nRF52840`, con bootloader `UF2` y builds locales para:
 
-## Requisitos
+- una luz Zigbee simple `On/Off`
+- un sensor Zigbee de temperatura y humedad por I2C
 
-- SDK local en `/home/lego/ncs/v2.9.0`
-- `west`, `cmake`, `arm-none-eabi-gcc`
-- Una placa `Bonito Nano V2.0` con bootloader `UF2`
-- Un coordinador Zigbee USB ya funcionando en Home Assistant (`ZHA` o `Zigbee2MQTT`)
+La base actual usa una board local `nice_nano_v2/nrf52840/uf2`, con flasheo por `UF2` y soporte opcional para `Black Magic Probe`.
 
-## Compilar
+## Hardware objetivo
 
-```bash
-cd /home/lego/sensores/zigbee
-chmod +x build-light-bulb.sh
-./build-light-bulb.sh
-```
+- `nRF52840` tipo `Bonito` / `nice!nano` clone
+- bootloader `UF2`
+- coordinador Zigbee USB en Home Assistant (`ZHA` o `Zigbee2MQTT`)
 
-El fichero importante queda en:
+Pinout relevante de la board actual:
 
-```text
-build/light_bulb/zephyr/zephyr.uf2
-```
+- LED onboard: `P0.15`
+- I2C0 SDA: `P0.17` (`D2`)
+- I2C0 SCL: `P0.20` (`D3`)
+- `EXT_POWER`: `P0.13` (`HIGH` enciende `VCC`, `LOW` lo corta)
 
-Los fuentes locales simplificados están en:
+Board local:
 
-```text
-app/light_bulb_local/
-```
+- [nice_nano_v2_nrf52840_uf2.dts](/home/lego/sensores/zigbee/boards/others/nice_nano_v2/nice_nano_v2_nrf52840_uf2.dts)
 
-## Compilar con Docker
+## Apps incluidas
 
-El entorno Docker usa la imagen oficial fijada al tag concreto `400c6cb4ec` y crea un workspace NCS persistente dentro del repo en:
+### Luz Zigbee
 
-```text
-.ncs-docker/v2.9.2
-```
+Código:
 
-La caché y los temporales del contenedor también quedan dentro del repo para no depender de `/tmp` del host:
+- [app/light_bulb_local](/home/lego/sensores/zigbee/app/light_bulb_local)
 
-```text
-.cache/docker-ncs/
-```
-
-Como este workspace `v2.9.2` no trae el add-on Zigbee dentro del repo local, el script Docker clona además el add-on oficial:
-
-```text
-.ncs-docker/v2.9.2/addons/ncs-zigbee
-```
+Build:
 
 ```bash
 cd /home/lego/sensores/zigbee
-chmod +x build-light-bulb-docker.sh docker-ncs-shell.sh
-./build-light-bulb-docker.sh
+bash ./build-light-bulb.sh
 ```
 
-Para abrir una shell dentro del contenedor con el workspace listo:
+Artefacto principal:
+
+- [build/light_bulb/zephyr/zephyr.uf2](/home/lego/sensores/zigbee/build/light_bulb/zephyr/zephyr.uf2)
+
+### Sensor Zigbee de temperatura y humedad
+
+Código:
+
+- [app/temp_sensor_local](/home/lego/sensores/zigbee/app/temp_sensor_local)
+
+El sensor probado actualmente es `HDC1080` por I2C en `0x40`, con temperatura y humedad expuestas por Zigbee.
+
+Overlay:
+
+- [temp_sensor_nice_nano.overlay](/home/lego/sensores/zigbee/overlays/temp_sensor_nice_nano.overlay)
+
+Build normal:
 
 ```bash
-./docker-ncs-shell.sh
+cd /home/lego/sensores/zigbee
+bash ./build-temp-sensor.sh
 ```
 
-## Flashear y depurar con Black Magic Probe
+Build de prueba a 30 s:
 
-La board local ya tiene activado el runner `blackmagicprobe`, así que Zephyr puede usar BMP directamente para `flash`, `debug` y `attach`.
+```bash
+cd /home/lego/sensores/zigbee
+bash ./build-temp-sensor-debug30.sh
+```
+
+Build sleepy de pruebas:
+
+```bash
+cd /home/lego/sensores/zigbee
+bash ./build-temp-sensor-sleepy.sh
+```
+
+Artefacto principal de la build `debug30`:
+
+- [build/temp_sensor_debug30/temp_sensor_local/zephyr/zephyr.uf2](/home/lego/sensores/zigbee/build/temp_sensor_debug30/temp_sensor_local/zephyr/zephyr.uf2)
+
+## Flasheo por UF2
+
+1. Conecta la placa por USB.
+2. Pulsa `reset` dos veces rápido.
+3. Debe aparecer una unidad como `NICENANO`.
+4. Copia el `.uf2` correspondiente a esa unidad.
+5. La placa se reiniciará sola.
+
+Ejemplo:
+
+```bash
+cp /home/lego/sensores/zigbee/build/temp_sensor_debug30/temp_sensor_local/zephyr/zephyr.uf2 /media/lego/NICENANO/
+sync
+```
+
+## Flasheo y debug por Black Magic Probe
+
+Script:
+
+- [blackmagicprobe.sh](/home/lego/sensores/zigbee/blackmagicprobe.sh)
 
 Cableado mínimo:
 
 - `SWDIO` -> `SWDIO`
 - `SWCLK` -> `SWCLK`
 - `GND` -> `GND`
-- `3V3` o `VTref` -> referencia de tensión de la placa
-- `RST` -> opcional, solo si quieres usar `connect-rst`
+- `VTref` -> `3V3`
 
-Uso rápido:
+Uso:
 
 ```bash
 cd /home/lego/sensores/zigbee
-chmod +x blackmagicprobe.sh
 ./blackmagicprobe.sh flash
 ./blackmagicprobe.sh debug
 ./blackmagicprobe.sh attach
 ```
 
-El script busca primero un build nativo en:
+## Consola serie
 
-```text
-build/light_bulb/light_bulb_local
-```
+Las builds de depuración exponen `USB CDC ACM` y salen como `/dev/ttyACM*`.
 
-Si no existe, usa el build Docker en:
-
-```text
-build-docker/light_bulb/light_bulb_local
-```
-
-Variables útiles:
+Ejemplo:
 
 ```bash
-export BMP_GDB_SERIAL=/dev/ttyACM0
-BUILD_DIR=/home/lego/sensores/zigbee/build-docker/light_bulb/light_bulb_local ./blackmagicprobe.sh flash
-BMP_CONNECT_RST=1 ./blackmagicprobe.sh debug
+screen /dev/ttyACM0 115200
 ```
 
-Notas:
+En la app de sensor se imprimen:
 
-- `flash` carga el firmware al objetivo usando el `zephyr.elf` del build.
-- `debug` abre `gdb` ya conectado al BMP y recarga el firmware.
-- `attach` abre `gdb` sin reflashear.
-- El script usa `--skip-rebuild`, así que primero debes compilar con `./build-light-bulb.sh` o `./build-light-bulb-docker.sh`.
+- fecha/hora de compilación
+- configuración de muestreo
+- resultado del escaneo I2C
+- lecturas de temperatura y humedad
+- estado de unión Zigbee
 
-## Flashear por USB
+## Home Assistant
 
-1. Conecta la placa por USB.
-2. Pulsa `reset` dos veces rápido para entrar en modo bootloader.
-3. Debe aparecer un disco USB tipo `NICENANO`, `FTHR840BOOT` o similar.
-4. Copia `build/light_bulb/zephyr/zephyr.uf2` a ese disco.
-5. La placa se reiniciará sola.
+La placa no es el coordinador. La dongle USB Zigbee de Home Assistant sigue siendo el coordinador.
 
-## Emparejar con Home Assistant
+ZHA:
 
-### ZHA
+1. `Ajustes -> Dispositivos y servicios -> Zigbee Home Automation`
+2. `Añadir dispositivo`
+3. Reinicia la placa o arráncala durante `permit join`
 
-1. Ve a `Ajustes -> Dispositivos y servicios -> Zigbee Home Automation`.
-2. Pulsa `Añadir dispositivo`.
-3. Enciende o reinicia la placa ya flasheada.
-4. Espera a que aparezca como una luz Zigbee regulable.
+Zigbee2MQTT:
 
-### Zigbee2MQTT
+1. Activa `Permit join`
+2. Reinicia la placa
 
-1. Activa `Permit join` en Zigbee2MQTT.
-2. Reinicia la placa ya flasheada.
-3. Espera a que anuncie un dispositivo de tipo luz.
+## Docker
 
-## Notas
+Hay scripts para compilar dentro de contenedor:
 
-- Este sample funciona como `router Zigbee`, no como coordinador.
-- La dongle USB de Home Assistant sigue siendo el coordinador de la red.
-- El overlay define GPIOs mínimos para que el sample no dependa de una Nordic DK clásica.
-- Si tu bootloader UF2 usa un mapa distinto, el build puede arrancar mal y habría que ajustar `boards/others/promicro_nrf52840/promicro_nrf52840_flash_uf2.dtsi`.
+- [build-light-bulb-docker.sh](/home/lego/sensores/zigbee/build-light-bulb-docker.sh)
+- [docker-ncs-shell.sh](/home/lego/sensores/zigbee/docker-ncs-shell.sh)
+
+El workspace Docker persistente se guarda en:
+
+- `.ncs-docker/`
+
+## Estado actual
+
+- luz Zigbee funcional
+- sensor Zigbee `temp + humidity` funcional con `HDC1080`
+- bootloader `UF2` instalado y operativo
+- board local migrada a `nice_nano_v2/nrf52840/uf2`
+
+Pendiente si se quiere versión a batería:
+
+- quitar `USB CDC`
+- bajar o eliminar logs
+- sleepy end device real
+- opcionalmente cortar `VCC` de sensores usando `P0.13`
