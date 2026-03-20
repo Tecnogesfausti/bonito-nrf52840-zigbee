@@ -1,0 +1,71 @@
+/ {
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+		ncs,zigbee-timer = &timer2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+			label = "Bulb LED";
+		};
+
+		led1: led_1 {
+			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+			label = "Unused LED 2";
+		};
+
+		led2: led_2 {
+			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+			label = "Network LED";
+		};
+
+		led3: led_3 {
+			gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
+			label = "Unused LED 4";
+		};
+
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpio0 22 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Unused button 1";
+			zephyr,code = <0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpio0 24 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Unused button 2";
+			zephyr,code = <1>;
+		};
+
+		button2: button_2 {
+			gpios = <&gpio1 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Unused button 3";
+			zephyr,code = <2>;
+		};
+
+		button3: button_3 {
+			gpios = <&gpio1 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Factory reset / identify";
+			zephyr,code = <3>;
+		};
+	};
+
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&zephyr_udc0 {
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "CDC_ACM_0";
+	};
+};

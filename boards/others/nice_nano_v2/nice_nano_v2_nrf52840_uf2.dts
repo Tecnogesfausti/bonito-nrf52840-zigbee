@@ -1,0 +1,16 @@
+/dts-v1/;
+#include "nice_nano_v2_nrf52840_common.dts"
+#include "nice_nano_v2_flash_uf2.dtsi"
+
+/ {
+	model = "nice!nano v2 UF2";
+	compatible = "others,nice-nano-v2-uf2";
+
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+		zephyr,uart-mcumgr = &cdc_acm_uart0;
+		zephyr,bt-mon-uart = &cdc_acm_uart0;
+		zephyr,bt-c2h-uart = &cdc_acm_uart0;
+	};
+};

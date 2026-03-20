@@ -1,0 +1,5 @@
+board:
+  name: nicenano
+  vendor: nicenano
+  socs:
+    - name: nrf52840

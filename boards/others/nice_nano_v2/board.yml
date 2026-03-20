@@ -1,0 +1,8 @@
+board:
+  name: nice_nano_v2
+  full_name: nice!nano v2
+  vendor: others
+  socs:
+    - name: nrf52840
+      variants:
+        - name: uf2

@@ -1,0 +1,6 @@
+if BOARD_NICENANO
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_NICENANO
