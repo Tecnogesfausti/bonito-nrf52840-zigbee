@@ -1,3 +1,0 @@
-/dts-v1/;
-#include "promicro_nrf52840_nrf52840_common.dts"
-#include <nordic/nrf52840_partition.dtsi>

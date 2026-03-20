@@ -13,8 +13,7 @@ build-docker/
 *.lst
 *.uf2
 
-nfrsdk/.west/
-nfrsdk/sdk-nrf-main/
+nfrsdk/
 
 tools/adafruit-nrf52-bootloader/
 tools/blackmagic/
